@@ -445,9 +445,15 @@ func (instance *Instance) writeOutput(store *store.Store) error {
 						if inputDomain == "" {
 							inputDomain = instance.options.Domains[0]
 						}
+					} else {
+						// No domain specified, extract root domain from hostname
+						rootDomain, err := publicsuffix.Domain(hostname)
+						if err == nil {
+							inputDomain = rootDomain
+						}
 					}
 
-					hostnameJson, err := json.Marshal(map[string]interface{}{"input": inputDomain, "hostname": hostname})
+					hostnameJson, err := json.Marshal(map[string]interface{}{"input": inputDomain, "host": hostname})
 					if err != nil {
 						gologger.Error().Msgf("could not marshal output as json: %v", err)
 					}
