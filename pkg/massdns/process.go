@@ -428,7 +428,26 @@ func (instance *Instance) writeOutput(store *store.Store) error {
 				var buffer strings.Builder
 
 				if instance.options.Json {
-					hostnameJson, err := json.Marshal(map[string]interface{}{"hostname": hostname})
+					// Extract root domain from hostname to use as input
+					inputDomain := ""
+					if len(instance.options.Domains) > 0 {
+						// Try to find matching root domain from options
+						rootDomain, err := publicsuffix.Domain(hostname)
+						if err == nil {
+							for _, domain := range instance.options.Domains {
+								if rootDomain == domain || strings.HasSuffix(hostname, "."+domain) {
+									inputDomain = domain
+									break
+								}
+							}
+						}
+						// If no match found, use the first domain as fallback
+						if inputDomain == "" {
+							inputDomain = instance.options.Domains[0]
+						}
+					}
+
+					hostnameJson, err := json.Marshal(map[string]interface{}{"input": inputDomain, "hostname": hostname})
 					if err != nil {
 						gologger.Error().Msgf("could not marshal output as json: %v", err)
 					}
